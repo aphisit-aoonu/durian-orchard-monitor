@@ -1,0 +1,8 @@
+torch>=2.5
+torchvision>=0.20
+transformers>=5.0
+opencv-python>=4.10
+pillow>=11
+numpy>=2.0
+imageio-ffmpeg>=0.5
+pytest>=8
