@@ -28,6 +28,16 @@ class Catch:
         return mass_kg * G * self.fall_m
 
 
+def pole_length(fruit_height_m: float, offset_m: float, mount_height_m: float = 1.0) -> float:
+    """Straight pole from the mount on the cart to a fruit offset_m to the side of the rail."""
+    return math.hypot(offset_m, fruit_height_m - mount_height_m)
+
+
+def load_moment_nm(load_kg: float, offset_m: float) -> float:
+    """Tipping moment about the rail from the fruit alone, held offset_m to the side."""
+    return load_kg * G * offset_m
+
+
 def scenarios(fruit_height_m: float, net_height_m: float = 2.0) -> list[Catch]:
     """The three options compared in the demo, for a fruit hanging at fruit_height_m."""
     return [

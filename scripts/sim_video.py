@@ -1,4 +1,4 @@
-"""Animated simulation of one inspection round: cart on the rail, cutting, net, basket, collection point.
+"""Animated simulation of one inspection round: cart on the rail, cutting, catch bag, basket, collection point.
 
 Usage: python -m scripts.sim_video [en|th]   -> out/sim_round_<lang>.mp4
 Everything here is simulated (which fruit is ready is random with a fixed seed). The video says so on every frame.
@@ -15,6 +15,7 @@ from PIL import Image, ImageDraw
 
 from durian import plan_draw as pd
 from durian import render
+from durian.growth import REACH_M
 from durian.layout import Orchard
 
 W, H, FPS = 1920, 1080, 30
@@ -25,19 +26,19 @@ SEED = 7
 
 TEXT = {
     "en": {"title": "One inspection round", "badge": "SIMULATION",
-           "sub": "Which fruit is ready is simulated. Distances come from the orchard plan.",
+           "sub": "Which fruit is ready is simulated. Distances come from the orchard plan. Trees are topped at 6 m.",
            "inspected": "trees passed", "cut": "fruit cut", "basket": "in basket", "delivered": "delivered",
-           "steps": ["Camera confirms ready fruit", "Pole cutter cuts the stem", "Fruit drops into the net",
-                     "Net funnels it to the basket", "Rail carries it to collection", "Weigh, count, notify truck"],
-           "side": "Side view", "truck": "Truck notified: {n} fruit ready for pickup",
+           "steps": ["Camera confirms ready fruit", "Pole cutter reaches the stem", "Fruit drops 0.3 m into the bag",
+                     "Pole lowers it to the basket", "Rail carries it to collection", "Weigh, count, notify truck"],
+           "side": "Side view, to scale", "limit": "6 m", "truck": "Truck notified: {n} fruit ready for pickup",
            "depot": "Depot", "collection": "Collection point", "at": "Tree {id}",
            "ready": "tree with fruit ready to cut", "done": "cut this round"},
     "th": {"title": "หนึ่งรอบการตรวจ", "badge": "ภาพจำลอง",
-           "sub": "ลูกไหนถึงเวลาตัดเป็นข้อมูลจำลอง · ระยะทางมาจากแปลนสวน",
+           "sub": "ลูกไหนถึงเวลาตัดเป็นข้อมูลจำลอง · ระยะทางมาจากแปลนสวน · ต้นตัดยอดคุมไว้ 6 ม.",
            "inspected": "ต้นที่ผ่าน", "cut": "ลูกที่ตัด", "basket": "ในตะกร้า", "delivered": "ส่งถึงจุดรับ",
-           "steps": ["กล้องยืนยันลูกที่ถึงเวลา", "หัวตัดบนเสายืดตัดขั้ว", "ลูกตกลงตาข่าย",
-                     "ตาข่ายเทลงตะกร้า", "รางพาไปจุดรับ", "ชั่ง นับ แจ้งรถมารับ"],
-           "side": "ภาพด้านข้าง", "truck": "แจ้งรถแล้ว: มี {n} ลูกรอรับ",
+           "steps": ["กล้องยืนยันลูกที่ถึงเวลา", "เสาหัวตัดยืดถึงขั้ว", "ลูกตกลงถุง 0.3 ม.",
+                     "เสาหย่อนลูกลงตะกร้า", "รางพาไปจุดรับ", "ชั่ง นับ แจ้งรถมารับ"],
+           "side": "ภาพด้านข้าง ตามสเกลจริง", "limit": "6 ม.", "truck": "แจ้งรถแล้ว: มี {n} ลูกรอรับ",
            "depot": "โรงจอด", "collection": "จุดรับ", "at": "ต้น {id}",
            "ready": "ต้นที่มีลูกถึงเวลาตัด", "done": "ตัดแล้วรอบนี้"},
 }
@@ -82,54 +83,58 @@ def timeline(o: Orchard, stops) -> list[dict]:
 
 
 def side_view(d: ImageDraw.ImageDraw, box, phase: str, p: float, t: dict) -> None:
-    """Small side-view illustration of cut -> net -> basket, scaled to the box."""
+    """Side view to scale: pole reaches the stem, fruit drops 0.3 m into the bag, pole lowers it to the basket."""
     x0, y0, x1, y1 = box
     d.rounded_rectangle(box, radius=16, fill=render.CARD)
     d.text((x0 + 18, y0 + 12), t["side"], fill=render.MUTED, font=render.font(16, bold=True))
     gy = y1 - 26
+    s = (gy - (y0 + 48)) / (REACH_M + 0.5)              # px per metre
+    ym = lambda m: gy - m * s
     d.line([(x0 + 16, gy), (x1 - 16, gy)], fill=(180, 170, 150), width=3)
-    tx = x0 + 150
-    can_top, can_bot = y0 + 46, y0 + 150
-    d.rectangle([tx - 9, can_bot - 20, tx + 9, gy], fill=(110, 80, 50))
-    d.ellipse([tx - 100, can_top, tx + 100, can_bot], fill=pd.CANOPY)
-    rail_y, cart_x = gy - 34, x1 - 120
-    d.line([(cart_x - 80, rail_y + 18), (x1 - 20, rail_y + 18)], fill=pd.RAIL, width=5)
-    d.rounded_rectangle([cart_x - 45, rail_y - 18, cart_x + 45, rail_y + 14], radius=6, fill=(255, 196, 0),
+    for x in range(int(x0 + 20), int(x1 - 20), 16):
+        d.line([(x, ym(REACH_M)), (x + 8, ym(REACH_M))], fill=(232, 137, 12), width=2)
+    d.text((x1 - 60, ym(REACH_M) + 4), t["limit"], fill=(232, 137, 12), font=render.font(15, bold=True))
+    tx = x0 + 230
+    d.rectangle([tx - 8, ym(2.5), tx + 8, gy], fill=(110, 80, 50))
+    d.ellipse([tx - 2.8 * s, ym(REACH_M), tx + 2.8 * s, ym(1.8)], fill=pd.CANOPY)
+    cart_x = tx + 4.5 * s
+    mount = (cart_x, ym(1.0))
+    d.line([(cart_x - 70, gy - 6), (cart_x + 90, gy - 6)], fill=pd.RAIL, width=5)
+    d.rounded_rectangle([cart_x - 42, mount[1], cart_x + 42, gy - 8], radius=6, fill=(255, 196, 0),
                         outline=render.INK, width=2)
-    # net: under the canopy, sloping down into the basket
-    net = [(tx - 70, can_bot + 18), (tx + 80, can_bot + 30), (cart_x - 40, rail_y - 20)]
-    d.line(net, fill=pd.NET, width=4)
-    hang = (tx + 45, can_bot + 2)
+    hang = (tx + 1.5 * s, ym(4.0))
     if phase != "cut":
-        d.ellipse([hang[0] - 13, hang[1] - 16, hang[0] + 13, hang[1] + 16], fill=(150, 160, 60))
+        d.ellipse([hang[0] - 11, hang[1] - 13, hang[0] + 11, hang[1] + 13], fill=(150, 160, 60))
         return
-    stem = (hang[0] + 2, hang[1] - 18)
-    ext = min(1.0, p / 0.25)
-    px = cart_x + (stem[0] + 14 - cart_x) * ext
-    py = rail_y - 18 + (stem[1] - (rail_y - 18)) * ext
-    d.line([(cart_x, rail_y - 18), (px, py)], fill=render.INK, width=4)
-    if 0.25 <= p < 0.38:
-        d.ellipse([stem[0] - 11, stem[1] - 11, stem[0] + 11, stem[1] + 11], outline=(214, 69, 65), width=3)
-    if p < 0.35:
+    stem = (hang[0], hang[1] - 16)
+    in_bag = (hang[0], hang[1] + 0.3 * s)
+    basket = (cart_x, mount[1] - 16)
+    if p < 0.38:
         fx, fy = hang
-        d.line([(fx, fy - 16), stem], fill=(90, 70, 40), width=3)
-    elif p < 0.55:
-        f = (p - 0.35) / 0.2
-        target = net[0][1] + (net[1][1] - net[0][1]) * ((hang[0] - net[0][0]) / (net[1][0] - net[0][0])) - 16
-        fx, fy = hang[0], hang[1] + (target - hang[1]) * f * f
+        d.line([(fx, fy - 13), stem], fill=(90, 70, 40), width=3)
+    elif p < 0.45:
+        f = (p - 0.38) / 0.07
+        fx, fy = hang[0], hang[1] + (in_bag[1] - hang[1]) * f * f
     else:
-        f = min(1.0, (p - 0.55) / 0.4)
-        sx = hang[0]
-        sy = net[0][1] + (net[1][1] - net[0][1]) * ((hang[0] - net[0][0]) / (net[1][0] - net[0][0])) - 16
-        ex, ey = net[2][0] + 22, net[2][1] - 4
-        fx, fy = sx + (ex - sx) * f, sy + (ey - sy) * f
-    d.ellipse([fx - 13, fy - 16, fx + 13, fy + 16], fill=(150, 160, 60), outline=(90, 100, 30), width=2)
+        f = min(1.0, (p - 0.45) / 0.5)
+        fx, fy = in_bag[0] + (basket[0] - in_bag[0]) * f, in_bag[1] + (basket[1] - in_bag[1]) * f
+    # the cutter head sits just above the stem; once the fruit is in the bag the head travels with it
+    head = (stem[0] + 10, stem[1] - 2) if p < 0.45 else (fx + 10, fy - 0.3 * s - 18)
+    ext = min(1.0, p / 0.25)
+    tip = (mount[0] + (head[0] - mount[0]) * ext, mount[1] + (head[1] - mount[1]) * ext)
+    d.line([mount, tip], fill=render.INK, width=4)
+    if p >= 0.25:
+        bx, by = tip[0] - 10, tip[1] + 18 + 0.3 * s
+        d.arc([bx - 16, by - 12, bx + 16, by + 18], 0, 180, fill=render.GREEN, width=4)
+    if 0.25 <= p < 0.38:
+        d.ellipse([stem[0] - 10, stem[1] - 10, stem[0] + 10, stem[1] + 10], outline=(214, 69, 65), width=3)
+    d.ellipse([fx - 11, fy - 13, fx + 11, fy + 13], fill=(150, 160, 60), outline=(90, 100, 30), width=2)
 
 
 def active_step(row) -> int:
     if row["phase"] == "cut":
         p = row["p"]
-        return 0 if p < 0.12 else 1 if p < 0.35 else 2 if p < 0.55 else 3
+        return 0 if p < 0.12 else 1 if p < 0.38 else 2 if p < 0.45 else 3
     if row["phase"] in ("unload", "done"):
         return 5
     return 4 if row["basket"] else -1

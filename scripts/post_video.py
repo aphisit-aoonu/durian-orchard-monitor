@@ -107,15 +107,18 @@ def main() -> None:
 
     photos = {p["title"]: p for p in json.loads(Path("commons/selected.json").read_text(encoding="utf-8"))}
     det = Detector(THRESHOLD)
-    for title in PICKS[:5]:
+    for title in PICKS[1:5]:
         p = photos[title]
         photo_frames(p, det(cv2.imread(p["file"])), write)
 
     hold(pipeline_card(), 6)
 
     hold(card([("Then: how would one machine harvest a whole orchard?", 48, (255, 255, 255), True),
-               ("Simulated round: rail cart, pole cutter, catch net, collection point", 28, (200, 205, 210), False)],
-              badge="SIMULATION"), 3)
+               ("Trees topped at 6 m, as growers already do. A short pole with a catch bag, on a rail cart.", 28,
+                (200, 205, 210), False)],
+              badge="SIMULATION"), 3.5)
+    still = lambda name: Image.open(Path("out") / name).convert("RGB").resize((W, H))
+    hold(still("sim_catch_en.png"), 7)
     cap = cv2.VideoCapture("out/sim_round_en.mp4")
     sim_fps = cap.get(cv2.CAP_PROP_FPS) or FPS
     cap.set(cv2.CAP_PROP_POS_FRAMES, int(SIM_FROM * sim_fps))
@@ -124,6 +127,7 @@ def main() -> None:
         if not ok:
             break
         write(Image.fromarray(cv2.cvtColor(cv2.resize(frame, (W, H)), cv2.COLOR_BGR2RGB)))
+    hold(still("sim_height_en.png"), 7)
 
     hold(card([("Built with", 30, (200, 205, 210), False),
                ("Python · PyTorch · OWLv2 · OpenCV · pytest", 46, (255, 255, 255), True),

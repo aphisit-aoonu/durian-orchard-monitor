@@ -2,7 +2,17 @@ import math
 
 import pytest
 
-from durian.catch import Catch, scenarios
+from durian.catch import Catch, load_moment_nm, pole_length, scenarios
+
+
+def test_pole_to_a_topped_tree_is_much_shorter_than_to_a_tall_one():
+    assert pole_length(4, 3) == pytest.approx(math.hypot(3, 3))
+    assert pole_length(5, 5) == pytest.approx(6.4, abs=0.05)
+    assert pole_length(10, 5) == pytest.approx(10.3, abs=0.05)
+
+
+def test_load_moment_depends_on_sideways_offset():
+    assert load_moment_nm(3, 5) == pytest.approx(3 * 9.81 * 5)
 
 
 def test_ten_metre_fall_is_fourteen_metres_per_second():

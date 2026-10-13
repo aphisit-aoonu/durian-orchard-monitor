@@ -5,15 +5,19 @@ and working out how a small orchard could be harvested with one machine on a rai
 
 ![Durians found on six trees](docs/gallery.jpg)
 
+A one-minute walkthrough: [`docs/demo.mp4`](docs/demo.mp4)
+
 ## Why
 
 Durian growers lose money when fruit is cut too early, and nobody can remember which fruit
 set on which day across hundreds of trees. Harvesting is also dangerous: someone climbs
 10 metres up and lowers each fruit on a rope.
 
-The long-term idea is one inspection cart that runs on a rail past every tree, a pole cutter,
-nets that catch the fruit, and one collection point. This repo is the software side, plus
-a simulation of the rest so the idea can be checked on paper first.
+The long-term idea is one inspection cart that runs on a rail past every tree, a short pole
+cutter with a catch bag, and one collection point. It assumes trees topped at about 6 m, which
+growers already do so they can harvest without climbing. For old trees of 10 m and more I found
+no machine that does this, so the system only tells the climbing crew which trees are due.
+This repo is the software side, plus a simulation of the rest so the idea can be checked on paper first.
 
 ## What works today
 
@@ -50,17 +54,25 @@ alley, so one pass serves the row on each side:
 ![One inspection round](docs/sim_round_frame.jpg)
 
 [`docs/sim_round_en.mp4`](docs/sim_round_en.mp4) plays one round: the cart stops at trees with
-ready fruit, the pole cutter cuts the stem, the fruit drops into the net and rolls into the
-basket, and at the end the collection point weighs, counts and notifies the truck.
-**Which fruit is ready is random in the simulation.** Distances and timings come from the plan.
+ready fruit, the pole cutter cuts the stem, the fruit drops 0.3 m into the bag on the cutter head,
+the pole lowers it into the basket, and at the end the collection point weighs, counts and notifies
+the truck. **Which fruit is ready is random in the simulation.** Distances and timings come from the plan.
 
 ## More of the orchard, simulated
 
-**Catching fruit from a 12 m tree.** Plain kinematics for a 3 kg durian cut 10 m up: dropped, it hits
-the ground at 14 m/s; a net 2 m up still meets it at 12.5 m/s; a bag on the cutter head catches it after
-0.3 m (2.4 m/s), then a braked tube lowers it. The plan is bag first, net as a backup.
+**Getting the fruit down.** Drawn to scale for a 3 kg durian. On a tree topped at 6 m, a pole of
+4.2 m reaches the fruit drawn (6.4 m at the longest reach in the plan) and the fruit meets the bag
+at 2.4 m/s; the same fruit dropped from 4 m hits the ground at 8.9 m/s. On an old 12 m tree the fruit
+hangs at 10 m, would land at 14 m/s and would need a 10.3 m pole, and no machine is claimed for it.
+The cart itself is not designed: holding 3 kg 5 m to the side puts 147 N·m on it.
 
-![Catching fruit](docs/sim_catch_en.png)
+![Getting the fruit down](docs/sim_catch_en.png)
+
+**Tree height and cutting calendar.** Each tree's height against the 6 m reach (which trees to top
+first), and which trees come due each week, counted as 120 days after full bloom for Monthong.
+Heights and bloom dates are simulated.
+
+![Tree height and cutting calendar](docs/sim_height_en.png)
 
 **Soil moisture by zone.** 12 zones with one sensor and one valve each, 14 simulated days with rain.
 Watering only the zones that are dry used 68% less water than watering every zone every two days, and
@@ -85,7 +97,8 @@ python -m scripts.video_demo render my_tree.mp4 en   # fast: annotated clip (en 
 
 python -m scripts.sim_plan en                        # orchard plan
 python -m scripts.sim_video en                       # one simulated round
-python -m scripts.sim_catch en                       # catch options, to scale
+python -m scripts.sim_catch en                       # topped tree vs old tall tree, to scale
+python -m scripts.sim_height en                      # tree heights and cutting calendar
 python -m scripts.sim_irrigation en                  # 14 days of zone watering
 ```
 
@@ -97,6 +110,9 @@ durian/
   motion.py     camera motion between frames
   tracker.py    one id per fruit, lowered-fruit events
   layout.py     orchard grid and rail route, in metres
+  catch.py      impact speed, pole length, load on the cart
+  growth.py     tree height against the reach, days to harvest
+  irrigation.py zone watering simulation
   plan_draw.py  top-down drawing
   render.py     shared drawing style
 scripts/        command-line entry points
@@ -110,6 +126,10 @@ tests/
 3. Flowering dates per tree and a weekly "ready to cut" list
 
 ## Credits
+
+Topping durian trees to 3.5–6 m so they can be harvested from the ground is existing grower
+practice: [Amarin TV, Rayong grower](https://www.amarintv.com/news/social/134992),
+[NSTDA on canopy control](https://www.nstda.or.th/agritec/durian-shape/).
 
 Gallery photos are from Wikimedia Commons under CC BY / CC BY-SA licences. Authors and links
 are in [`docs/gallery_credits.txt`](docs/gallery_credits.txt). The gallery image is shared under
