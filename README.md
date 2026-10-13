@@ -54,6 +54,21 @@ ready fruit, the pole cutter cuts the stem, the fruit drops into the net and rol
 basket, and at the end the collection point weighs, counts and notifies the truck.
 **Which fruit is ready is random in the simulation.** Distances and timings come from the plan.
 
+## More of the orchard, simulated
+
+**Catching fruit from a 12 m tree.** Plain kinematics for a 3 kg durian cut 10 m up: dropped, it hits
+the ground at 14 m/s; a net 2 m up still meets it at 12.5 m/s; a bag on the cutter head catches it after
+0.3 m (2.4 m/s), then a braked tube lowers it. The plan is bag first, net as a backup.
+
+![Catching fruit](docs/sim_catch_en.png)
+
+**Soil moisture by zone.** 12 zones with one sensor and one valve each, 14 simulated days with rain.
+Watering only the zones that are dry used 68% less water than watering every zone every two days, and
+had far fewer waterlogged zone-days (23 vs 105), which matters because durian roots rot in standing
+water. Weather and sensor values are simulated.
+
+![Soil moisture](docs/sim_irrigation_en.png)
+
 ## Run it
 
 Python 3.10+. A GPU helps (about 2.7 s per image on a GTX 1650, much slower on CPU).
@@ -70,6 +85,8 @@ python -m scripts.video_demo render my_tree.mp4 en   # fast: annotated clip (en 
 
 python -m scripts.sim_plan en                        # orchard plan
 python -m scripts.sim_video en                       # one simulated round
+python -m scripts.sim_catch en                       # catch options, to scale
+python -m scripts.sim_irrigation en                  # 14 days of zone watering
 ```
 
 ## Layout
