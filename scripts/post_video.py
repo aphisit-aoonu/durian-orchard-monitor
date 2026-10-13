@@ -103,7 +103,7 @@ def main() -> None:
     hold = lambda im, sec: [write(im) for _ in range(int(sec * FPS))]
 
     hold(card([("Finding durians on the tree", 72, (255, 255, 255), True),
-               ("A side project in computer vision for orchards", 32, (200, 205, 210), False)]), 3)
+               ("A side project in computer vision for orchards", 32, (200, 205, 210), False)], badge="EARLY DEMO"), 3)
 
     photos = {p["title"]: p for p in json.loads(Path("commons/selected.json").read_text(encoding="utf-8"))}
     det = Detector(THRESHOLD)
